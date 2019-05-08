@@ -1,0 +1,41 @@
+body.popup{
+    width: 115px;
+    height: 77px;
+}
+
+.hover-preview{
+    position: absolute;
+    box-shadow: 0px 0px 12px 3px #888888;
+}
+
+.hover-preview-div{
+    position: relative;
+    left: -250px;
+    top: -150px;
+}
+
+.title-container{
+    padding-left: 10px;
+}
+
+.options-item{
+    padding-left: 10px;
+}
+
+.options-button{
+    background-color: #4CAF50;
+    border-radius: 2px;
+    position: relative;
+    border: none;
+    color: white;
+    text-align: center;
+    display: inline-block;
+    font-size: 13px;
+    transition-duration: 0.4s;
+}
+
+.options-button:hover {
+    background-color: #f44336;
+    color: white;
+    cursor: pointer;
+}

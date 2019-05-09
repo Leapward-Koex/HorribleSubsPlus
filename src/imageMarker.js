@@ -4,14 +4,7 @@ var imageCache = [];
 window.setTimeout(function() {
     refreshList();
     var moreButton = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
-    console.log(moreButton);
-    if (moreButton){
-        moreButton.addEventListener('mousedown', function(){
-            window.setTimeout(function() {
-                refreshList();
-            }, 1000);
-        });
-    }
+    bindReadMore(moreButton);
 }, 1000);
 
 var getSourceAsDOM = function (element){
@@ -54,6 +47,18 @@ function mouseLeave(e) {
     );
 }
 
+function bindReadMore(readMoreElement){
+    if (moreButton){
+        moreButton.addEventListener('mousedown', function(){
+            window.setTimeout(function() {
+                var moreButton = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
+                bindReadMore(readMoreElement);
+                refreshList();
+            }, 1000);
+        });
+    }
+}
+
 function addMouseEvents(items){
     items.forEach(function(element){
         element.addEventListener('mouseenter', function (e) {
@@ -66,9 +71,8 @@ function addMouseEvents(items){
 }
 
 function refreshList() {
-    
 
-    chrome.storage.local.get(['imageCache'], function(results) {
+    getCache('imageCache').then(function(results){
         var listItems = document.querySelectorAll("div.latest-releases li");
         imageCache = results.imageCache ? results.imageCache.json : [];
         imageKeyCache = imageCache.map(function(item){return item.key});
@@ -85,38 +89,39 @@ function refreshList() {
             if(element){
                 getSourceAsDOM(element).then(
                     function (targetDom) {
+                        // Successful dom retrieval with series image
                         targetImageURL = targetDom.querySelector("div.series-image img").src;
-                        console.log(element, targetDom, targetImageURL);
                         if (element.querySelectorAll(".hover-preview").length == 0){
                             element.appendChild(img_create(targetImageURL));
                             addMouseEvents([element]);
                             imageCache = imageCache.concat([{"key": getKeyFromElement(element), "url": targetImageURL}]);
+                            if (index === unCachedItems.length){
+                                setCache(imageCache);
+                            }
                         }
-                    }, function(url){
+                    }, 
+                    function(url){
                         console.log("Failed to retrieve", url);
                         failedImages.append(url);
-
                     }, element, index, unCachedItems, DOMGrabInterval);
             }
             if (++index === unCachedItems.length){
-                setCache(imageCache).then(function(){
-                    clearInterval(DOMGrabInterval);
-                });
+                clearInterval(DOMGrabInterval);
             }
         }, 1000);
+
         cachedElements.forEach(function(element){
             var imageCacheObject = imageCache.filter(function(item){return item.key == getKeyFromElement(element)})[0];
             if (element.querySelectorAll(".hover-preview").length == 0){
                 element.appendChild(img_create(imageCacheObject.url));
             }
-        })
+        });
         
         addMouseEvents(cachedElements);
         if(failedImages.length != 0){
             refreshList();
         }
     });
-
 }
 
 function img_create(src, alt, title) {
@@ -147,10 +152,10 @@ var setCache = function (json) {
     );
 }
 
-var getCache = function () {
+var getCache = function (key) {
     return new Promise(
         (resolve, reject) => {
-            chrome.storage.local.get(['key'], function(result) {
+            chrome.storage.local.get([key], function(result) {
                 resolve(result)
             });
         }

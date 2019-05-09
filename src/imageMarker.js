@@ -48,10 +48,10 @@ function mouseLeave(e) {
 }
 
 function bindReadMore(readMoreElement){
-    if (moreButton){
-        moreButton.addEventListener('mousedown', function(){
+    if (readMoreElement){
+        readMoreElement.addEventListener('mousedown', function(){
             window.setTimeout(function() {
-                var moreButton = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
+                var readMoreElement = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
                 bindReadMore(readMoreElement);
                 refreshList();
             }, 1000);

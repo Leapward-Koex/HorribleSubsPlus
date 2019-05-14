@@ -25,7 +25,8 @@
                 "https://horriblesubs.info/"
             ],
             "js": [
-                "imageMarker.js"
+                "imageMarker.js",
+                "scripts/progressbar.min.js"
             ],
             "css":[
                 "main.css"

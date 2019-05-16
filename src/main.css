@@ -39,3 +39,18 @@ body.popup{
     color: white;
     cursor: pointer;
 }
+
+.loadBarContainer{
+    bottom: 20px;
+    left: 20px;
+    position: fixed;
+    width: 345px;
+}
+
+.ldBar-label {
+    position: absolute;
+}
+
+#ldbarid{
+    width: 345px;
+}

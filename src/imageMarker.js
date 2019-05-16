@@ -182,7 +182,7 @@ function createLoadBar(){
           bar.path.setAttribute('stroke', state.color);
         },
         text: {
-            value: 'Starting cache fill',
+            value: 'Building cache...',
             style: {
                 // Text color.
                 // Default: same as stroke color (options.color)

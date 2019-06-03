@@ -1,10 +1,12 @@
 setTimeout(function(){
-    let cacheDeleteAndRefresh = document.getElementById('delete-cache');
+    var cacheDeleteAndRefresh = document.getElementById('delete-cache');
 
     cacheDeleteAndRefresh.onclick = function(element) {
+        // Remove image cache
         chrome.storage.local.set({"imageCache":null}, function(result) {
         });
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            // Refresh page
             chrome.tabs.update(tabs[0].id, {url: tabs[0].url});
         });
     };

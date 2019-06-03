@@ -4,16 +4,22 @@ var imageCache = [];
 var head = document.querySelector("head");
 
 window.setTimeout(() => {
-    refreshList();
+    // Main
+
+    refreshImagePreviews();  // Bind image hover preview to list elements
+
+    //createWatchlist();
+
     var moreButton = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
     bindReadMore(moreButton);
+
 }, 1000);
 
 var getSourceAsDOM = function (element){
     return new Promise((resolve, reject) => {
             xmlhttp = new XMLHttpRequest();
             xmlhttp.onreadystatechange = () => {
-                if (this.readyState == 4 && this.status == 200) {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
                     parser = new DOMParser();
                     if(parser.parseFromString(xmlhttp.responseText,"text/html").querySelector("div.series-image img")){
                         resolve(parser.parseFromString(xmlhttp.responseText,"text/html"))
@@ -67,7 +73,7 @@ var bindReadMore = (readMoreElement) => {
             window.setTimeout(() => {
                 var readMoreElement = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
                 bindReadMore(readMoreElement);
-                refreshList();
+                refreshImagePreviews();
             }, 1000);
         });
     }
@@ -84,12 +90,12 @@ var addMouseEvents = (items) => {
     });
 }
 
-var refreshList = () => {
+var refreshImagePreviews = () => {
 
-    getCache('imageCache').then((results) => {
+    ChromeStorage.getCache('imageCache').then((results) => {
         var listItems = document.querySelectorAll("div.latest-releases li");
         imageCache = results.imageCache ? results.imageCache.json : [];
-        imageKeyCache = imageCache.map((item) => item.key);
+        imageKeyCache = imageCache.map((item) => item.key); // Array of chached element keys, i.e. the show name
         var unCachedItems = Array.from(listItems).filter((e) => {
             return imageKeyCache.indexOf(getKeyFromElement(e)) == -1;
         });
@@ -117,15 +123,22 @@ var refreshList = () => {
                             loadBar.setText(getKeyFromElement(element) + " DONE!");
                             loadBar.animate(percent);
                             if (index === unCachedItems.length){
-                                setCache(imageCache);
-                                setTimeout(() => {
-                                    loadBar.destroy();
-                                }, 3000);
+                                // All items have been attempted, store the results and restart until all items are cached
+                                ChromeStorage.setCache("imageCache", imageCache).then(() => {
+                                    setTimeout(() => {
+                                        loadBar.destroy();
+
+                                        if(failedImages.length != 0){
+                                            // If failed to create hover preview for all images, try again with the failed images
+                                            refreshImagePreviews();
+                                        }
+                                    }, 3000);
+                                });
                             }
                         }
                     }, 
                     (url) => {
-                        // Successful dom retrieval with series image
+                        // Failed dom retrieval with series image
                         console.log("Failed to retrieve", url);
                         failedImages.concat([url]);
                     }, element, index, unCachedItems, DOMGrabInterval, loadBar);
@@ -143,11 +156,11 @@ var refreshList = () => {
         });
         
         addMouseEvents(cachedElements);
-        if(failedImages.length != 0){
-            // If failed to create hover preview for all images, try again with the failed images
-            refreshList();
-        }
     });
+}
+
+var createWatchlist = () =>{
+
 }
 
 var imgCreate = (src, alt, title) => {
@@ -166,24 +179,4 @@ var imgCreate = (src, alt, title) => {
 var getKeyFromElement = (element) => {
     var link = element.querySelector("a").href;
     return link.split("#")[0];
-}
-
-var setCache = (json) => {
-    return new Promise(
-        (resolve, reject) => {
-            chrome.storage.local.set({"imageCache":{json}}, function(result) {
-                resolve(result)
-            });
-        }
-    );
-}
-
-var getCache = (key) => {
-    return new Promise(
-        (resolve, reject) => {
-            chrome.storage.local.get([key], function(result) {
-                resolve(result)
-            });
-        }
-    );
 }

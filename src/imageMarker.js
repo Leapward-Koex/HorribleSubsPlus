@@ -1,19 +1,18 @@
 
 var imageCache = [];
 
-var head = document.querySelector("head")
+var head = document.querySelector("head");
 
-window.setTimeout(function() {
+window.setTimeout(() => {
     refreshList();
     var moreButton = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
     bindReadMore(moreButton);
 }, 1000);
 
 var getSourceAsDOM = function (element){
-    return new Promise(
-        function (resolve, reject) {
+    return new Promise((resolve, reject) => {
             xmlhttp = new XMLHttpRequest();
-            xmlhttp.onreadystatechange = function() {
+            xmlhttp.onreadystatechange = () => {
                 if (this.readyState == 4 && this.status == 200) {
                     parser = new DOMParser();
                     if(parser.parseFromString(xmlhttp.responseText,"text/html").querySelector("div.series-image img")){
@@ -31,14 +30,14 @@ var getSourceAsDOM = function (element){
     );
 }
 
-function injectScripts(head){
+var injectScripts = (head) => {
     var script = document.createElement("script");
     script.setAttribute("src", "scripts/loading-bar.js");
     script.setAttribute("type", "text/javascript");
     head.appendChild(script);
 }
 
-function injectStyles(head){
+var injectStyles = (head) => {
     var style = document.createElement("link");
     style.setAttribute("href", "styles/loading-bar.css");
     style.setAttribute("type", "text/css");
@@ -46,28 +45,26 @@ function injectStyles(head){
     head.appendChild(style);
 }
 
-function mouseOver(e) {
+var mouseOver = (e) => {
     var hoverPreview = e.srcElement.querySelector(".hover-preview");
     hoverPreview.style.display = "block";
 }
 
-function mouseLeave(e) {
-    e.srcElement.querySelectorAll(".hover-preview").forEach(
-        function(element){
+var mouseLeave = (e) => {
+    e.srcElement.querySelectorAll(".hover-preview").forEach((element) => {
             element.style.display = "none";
         }
     );
-    document.querySelectorAll(".hover-preview").forEach(
-        function(element){
+    document.querySelectorAll(".hover-preview").forEach((element) => {
             element.style.display = "none";
         }
     );
 }
 
-function bindReadMore(readMoreElement){
+var bindReadMore = (readMoreElement) => {
     if (readMoreElement){
-        readMoreElement.addEventListener('mousedown', function(){
-            window.setTimeout(function() {
+        readMoreElement.addEventListener('mousedown', () => {
+            window.setTimeout(() => {
                 var readMoreElement = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
                 bindReadMore(readMoreElement);
                 refreshList();
@@ -76,27 +73,27 @@ function bindReadMore(readMoreElement){
     }
 }
 
-function addMouseEvents(items){
+var addMouseEvents = (items) => {
     items.forEach(function(element){
-        element.addEventListener('mouseenter', function (e) {
+        element.addEventListener('mouseenter', (e) => {
             mouseOver(e);
         }, false);
-        element.addEventListener('mouseleave', function (e) {
+        element.addEventListener('mouseleave', (e) => {
             mouseLeave(e);
         }, false);
     });
 }
 
-function refreshList() {
+var refreshList = () => {
 
-    getCache('imageCache').then(function(results){
+    getCache('imageCache').then((results) => {
         var listItems = document.querySelectorAll("div.latest-releases li");
         imageCache = results.imageCache ? results.imageCache.json : [];
-        imageKeyCache = imageCache.map(function(item){return item.key});
-        var unCachedItems = Array.from(listItems).filter(function(e){
+        imageKeyCache = imageCache.map((item) => item.key);
+        var unCachedItems = Array.from(listItems).filter((e) => {
             return imageKeyCache.indexOf(getKeyFromElement(e)) == -1;
         });
-        var cachedElements = Array.from(listItems).filter(function(element){
+        var cachedElements = Array.from(listItems).filter((element) => {
             return imageKeyCache.indexOf(getKeyFromElement(element)) != -1;
         });
         var index = 0;
@@ -106,11 +103,10 @@ function refreshList() {
         if(unCachedItems.length != 0){
             var loadBar = new LoadBar();
         }
-        var DOMGrabInterval = setInterval(function(){
+        var DOMGrabInterval = setInterval(() => {
             var element = unCachedItems[index];
             if(element){
-                getSourceAsDOM(element).then(
-                    function (targetDom) {
+                getSourceAsDOM(element).then((targetDom) => {
                         // Successful dom retrieval with series image
                         targetImageURL = targetDom.querySelector("div.series-image img").src;
                         if (element.querySelectorAll(".hover-preview").length == 0){
@@ -128,7 +124,8 @@ function refreshList() {
                             }
                         }
                     }, 
-                    function(url){
+                    (url) => {
+                        // Successful dom retrieval with series image
                         console.log("Failed to retrieve", url);
                         failedImages.concat([url]);
                     }, element, index, unCachedItems, DOMGrabInterval, loadBar);
@@ -138,8 +135,8 @@ function refreshList() {
             }
         }, 1000);
 
-        cachedElements.forEach(function(element){
-            var imageCacheObject = imageCache.filter(function(item){return item.key == getKeyFromElement(element)})[0];
+        cachedElements.forEach((element) => {
+            var imageCacheObject = imageCache.filter((item) => item.key == getKeyFromElement(element))[0];
             if (element.querySelectorAll(".hover-preview").length == 0){
                 element.appendChild(imgCreate(imageCacheObject.url));
             }
@@ -147,12 +144,13 @@ function refreshList() {
         
         addMouseEvents(cachedElements);
         if(failedImages.length != 0){
+            // If failed to create hover preview for all images, try again with the failed images
             refreshList();
         }
     });
 }
 
-function imgCreate(src, alt, title) {
+var imgCreate = (src, alt, title) => {
     var containerDiv = document.createElement('div');
     var img = document.createElement('img');
     img.src = src;
@@ -165,12 +163,12 @@ function imgCreate(src, alt, title) {
     return containerDiv;
 }
 
-function getKeyFromElement(element){
+var getKeyFromElement = (element) => {
     var link = element.querySelector("a").href;
     return link.split("#")[0];
 }
 
-var setCache = function (json) {
+var setCache = (json) => {
     return new Promise(
         (resolve, reject) => {
             chrome.storage.local.set({"imageCache":{json}}, function(result) {
@@ -180,7 +178,7 @@ var setCache = function (json) {
     );
 }
 
-var getCache = function (key) {
+var getCache = (key) => {
     return new Promise(
         (resolve, reject) => {
             chrome.storage.local.get([key], function(result) {

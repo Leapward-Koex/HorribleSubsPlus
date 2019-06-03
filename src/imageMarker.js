@@ -1,17 +1,9 @@
 
 var imageCache = [];
 
-var bar1 = null;
-
 var head = document.querySelector("head")
-// injectScripts(head)
-// injectStyles(head)
-
-var makeLoadBar
 
 window.setTimeout(function() {
-    //createLoadBar();
-    
     refreshList();
     var moreButton = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
     bindReadMore(moreButton);
@@ -112,7 +104,7 @@ function refreshList() {
         var perItemPercent = 1 / unCachedItems.length;
         var failedImages = [];
         if(unCachedItems.length != 0){
-            createLoadBar();
+            var loadBar = new LoadBar();
         }
         var DOMGrabInterval = setInterval(function(){
             var element = unCachedItems[index];
@@ -122,25 +114,24 @@ function refreshList() {
                         // Successful dom retrieval with series image
                         targetImageURL = targetDom.querySelector("div.series-image img").src;
                         if (element.querySelectorAll(".hover-preview").length == 0){
-                            element.appendChild(img_create(targetImageURL));
+                            element.appendChild(imgCreate(targetImageURL));
                             addMouseEvents([element]);
                             imageCache = imageCache.concat([{"key": getKeyFromElement(element), "url": targetImageURL}]);
                             percent = percent += perItemPercent;
-                            bar1.setText(getKeyFromElement(element) + " DONE!");
-                            bar1.animate(percent);
+                            loadBar.setText(getKeyFromElement(element) + " DONE!");
+                            loadBar.animate(percent);
                             if (index === unCachedItems.length){
                                 setCache(imageCache);
                                 setTimeout(() => {
-                                    //move this
-                                    removeLoadBar()
+                                    loadBar.destroy();
                                 }, 3000);
                             }
                         }
                     }, 
                     function(url){
                         console.log("Failed to retrieve", url);
-                        failedImages.append(url);
-                    }, element, index, unCachedItems, DOMGrabInterval, bar1);
+                        failedImages.concat([url]);
+                    }, element, index, unCachedItems, DOMGrabInterval, loadBar);
             }
             if (++index === unCachedItems.length){
                 clearInterval(DOMGrabInterval);
@@ -150,7 +141,7 @@ function refreshList() {
         cachedElements.forEach(function(element){
             var imageCacheObject = imageCache.filter(function(item){return item.key == getKeyFromElement(element)})[0];
             if (element.querySelectorAll(".hover-preview").length == 0){
-                element.appendChild(img_create(imageCacheObject.url));
+                element.appendChild(imgCreate(imageCacheObject.url));
             }
         });
         
@@ -161,55 +152,7 @@ function refreshList() {
     });
 }
 
-function createLoadBar(){
-    var loadBarContainer  = document.createElement('div');
-    var loadBar = document.createElement('div');
-    loadBarContainer.classList= ['loadBarContainer'];
-    loadBar.id = "ldbarid"
-    loadBarContainer.appendChild(loadBar);
-    document.querySelector("body").appendChild(loadBarContainer);
-    bar1 = new ProgressBar.Line('#ldbarid', {
-        strokeWidth: 2,
-        easing: 'easeInOut',
-        duration: 1400,
-        color: '#FFEA82',
-        trailColor: '#636467',
-        trailWidth: 0.1,
-        svgStyle: {width: '100%', height: '100%'},
-        from: {color: '#FFEA82'},
-        to: {color: '#ED6A5A'},
-        step: (state, bar) => {
-          bar.path.setAttribute('stroke', state.color);
-        },
-        text: {
-            value: 'Building cache...',
-            style: {
-                // Text color.
-                // Default: same as stroke color (options.color)
-                color: '#636467',
-                position: 'absolute',
-                left: '50%',
-                top: '-110%',
-                padding: 0,
-                margin: 0,
-                // You can specify styles which will be browser prefixed
-                transform: {
-                    prefix: true,
-                    value: 'translate(-50%, -50%)'
-                }
-            },
-            autoStyleContainer: true,
-        },
-        warnings: true
-    });
-}
-
-function removeLoadBar(){
-    bar1.destroy();
-    querySelector(".loadBarContainer").destroy();
-}
-
-function img_create(src, alt, title) {
+function imgCreate(src, alt, title) {
     var containerDiv = document.createElement('div');
     var img = document.createElement('img');
     img.src = src;

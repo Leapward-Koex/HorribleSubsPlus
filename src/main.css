@@ -41,6 +41,7 @@ body.popup{
 }
 
 .loadBarContainer{
+    height: 130px;
     bottom: 20px;
     left: 20px;
     position: fixed;
@@ -51,6 +52,8 @@ body.popup{
     position: absolute;
 }
 
-#ldbarid{
-    width: 345px;
+.ldbar{
+    position: absolute !important;
+    bottom: 25px;
+    width: 285px;
 }

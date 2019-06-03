@@ -26,6 +26,7 @@
             ],
             "js": [
                 "imageMarker.js",
+                "LoadBar.js",
                 "scripts/progressbar.min.js"
             ],
             "css":[

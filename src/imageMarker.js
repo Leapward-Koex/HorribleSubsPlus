@@ -1,18 +1,29 @@
 
 var imageCache = [];
 
+var readMoreEvents = [];
+
 var head = document.querySelector("head");
 
 window.setTimeout(() => {
     // Main
-
+    var moreButton = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
     refreshImagePreviews();  // Bind image hover preview to list elements
 
-    createWatchlist();
-    var moreButton = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
-    bindReadMore(moreButton);
+    createWatchlist().then(x=>{
+        readMoreEvents = readMoreEvents.concat([x.rePaint]);
+        bindReadMore(moreButton, readMoreEvents);
+    });
+    
+    bindReadMore(moreButton, readMoreEvents);
 
 }, 1000);
+
+var runHandlers = () => {
+    readMoreEvents.forEach(x=>{
+        x();
+    })
+}
 
 var getSourceAsDOM = function (element){
     return new Promise((resolve, reject) => {
@@ -66,13 +77,14 @@ var mouseLeave = (e) => {
     );
 }
 
-var bindReadMore = (readMoreElement) => {
+var bindReadMore = (readMoreElement, readMoreEvents) => {
     if (readMoreElement){
         readMoreElement.addEventListener('mousedown', () => {
             window.setTimeout(() => {
                 var readMoreElement = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
                 bindReadMore(readMoreElement);
                 refreshImagePreviews();
+                runHandlers();
             }, 1000);
         });
     }
@@ -160,7 +172,7 @@ var refreshImagePreviews = () => {
 
 var createWatchlist = () => {
     return WatchList.populateList().then((watchListCache) => {
-        var watchList = new WatchList(watchListCache);
+        return new WatchList(watchListCache);
         // Bind to loadmore here
     })
 }

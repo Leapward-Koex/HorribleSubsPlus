@@ -56,7 +56,6 @@ class WatchList{
         var sourceAnchorElement = event.srcElement.parentElement;
         var sourceLink = this.getShowKeyFromURL(sourceAnchorElement.href);
         var sourceTitle = sourceAnchorElement.childNodes[1].textContent.slice(0, sourceAnchorElement.childNodes[1].textContent.length - 3);
-        event.srcElement.onclick = this.removeShowFromSourceList; 
 
         this.addShow(sourceTitle, sourceLink, sourceAnchorElement)
 
@@ -66,36 +65,45 @@ class WatchList{
             console.log("Updated watching list cache with item:", {"key": sourceLink, "title": sourceTitle})
         });
 
+        event.preventDefault();
     }
 
     addShow = (showName, href, sourceAnchorElement) => {
         // When you add from cache?
-        var listItem = document.createElement('div');
-        listItem.classList.add("list-item")
-        listItem.style.display = "flex";
+        var itemCountInList = [...this.listBox.children].filter(item => {
+            return item.querySelector('a.show-label').innerHTML == showName;
+        }).length;
 
-        var removeButton = document.createElement('a');
-        removeButton.href = "#";
-        removeButton.classList.add("close-button");
-        removeButton.onclick = this.removeShow;
+        if(itemCountInList == 0){
+            // Dont show duplicate entries in the watching list (caused by readmore rePaint)
+            var listItem = document.createElement('div');
+            listItem.classList.add("list-item")
+            listItem.style.display = "flex";
 
-        var showLabel = document.createElement('a');
-        showLabel.classList.add("show-label");
-        showLabel.href = href;
-        showLabel.textContent = showName;
+            var removeButton = document.createElement('a');
+            removeButton.href = "#";
+            removeButton.classList.add("close-button");
+            removeButton.onclick = this.removeShow;
 
-        listItem.appendChild(removeButton);
-        listItem.appendChild(showLabel);
+            var showLabel = document.createElement('a');
+            showLabel.classList.add("show-label");
+            showLabel.href = href;
+            showLabel.textContent = showName;
 
-        this.listBox.appendChild(listItem);
+            listItem.appendChild(removeButton);
+            listItem.appendChild(showLabel);
 
+            this.listBox.appendChild(listItem);
+        }
+        
         //colour element here
-
-        sourceAnchorElement = sourceAnchorElement ? sourceAnchorElement : this.getSourceListItemsFromKey(this.getShowKeyFromURL(href))[0].querySelector('.source-show-anchor');
-        sourceAnchorElement.parentElement.classList.add("watching");
-        sourceAnchorElement.classList.add("watching-anchor");
-        sourceAnchorElement.querySelector('a').classList.add("watching-add-button");
-
+        if(this.getSourceListItemsFromKey(this.getShowKeyFromURL(href))[0]){
+            sourceAnchorElement = sourceAnchorElement ? sourceAnchorElement : this.getSourceListItemsFromKey(this.getShowKeyFromURL(href))[0].querySelector('.source-show-anchor');
+            sourceAnchorElement.parentElement.classList.add("watching");
+            sourceAnchorElement.classList.add("watching-anchor");
+            sourceAnchorElement.querySelector('a').classList.add("watching-add-button");
+            sourceAnchorElement.querySelector('a').onclick = this.removeShowFromSourceList;
+        }
     }
 
     removeShow = (event) => {
@@ -148,12 +156,15 @@ class WatchList{
         ChromeStorage.setCache("watchListCache", this.currentlyWatchingItemsArray).then(()=>{
             console.log("Removed item from cache:", {"key": this.getShowKeyFromURL(showLink)})
         });
-
+        event.preventDefault();
 
     }
 
     rePaint = () => {
-
+        this.populateAddToListButtons(this.currentlyWatchingItemsArray);
+        this.currentlyWatchingItemsArray.forEach(item => {
+            this.addShow(item.title, item.key);
+        });
     }
 
     populateAddToListButtons = (watchList) => {

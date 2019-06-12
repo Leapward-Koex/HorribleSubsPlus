@@ -8,8 +8,7 @@ window.setTimeout(() => {
 
     refreshImagePreviews();  // Bind image hover preview to list elements
 
-    //createWatchlist();
-
+    createWatchlist();
     var moreButton = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
     bindReadMore(moreButton);
 
@@ -159,8 +158,11 @@ var refreshImagePreviews = () => {
     });
 }
 
-var createWatchlist = () =>{
-
+var createWatchlist = () => {
+    return WatchList.populateList().then((watchListCache) => {
+        var watchList = new WatchList(watchListCache);
+        // Bind to loadmore here
+    })
 }
 
 var imgCreate = (src, alt, title) => {

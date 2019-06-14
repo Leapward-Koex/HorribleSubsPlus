@@ -1,28 +1,28 @@
-body.popup{
-    width: 115px;
-    height: 77px;
+body.popup {
+    width: 200px;
+    height: 102px;
 }
 
-.hover-preview{
+.hover-preview {
     position: absolute;
     box-shadow: 0px 0px 12px 3px #888888;
 }
 
-.hover-preview-div{
+.hover-preview-div {
     position: relative;
     left: -250px;
     top: -150px;
 }
 
-.title-container{
+.title-container {
     padding-left: 10px;
 }
 
-.options-item{
+.options-item {
     padding-left: 10px;
 }
 
-.options-button{
+.options-button {
     background-color: #4CAF50;
     border-radius: 2px;
     position: relative;
@@ -40,7 +40,8 @@ body.popup{
     cursor: pointer;
 }
 
-.loadBarContainer{
+.loadBarContainer {
+    height: 130px;
     bottom: 20px;
     left: 20px;
     position: fixed;
@@ -51,6 +52,69 @@ body.popup{
     position: absolute;
 }
 
-#ldbarid{
-    width: 345px;
+.ldbar {
+    position: absolute !important;
+    bottom: 25px;
+    width: 285px;
+}
+
+.list-item {
+    border-bottom: 1px dotted #ddd;
+    border-top: none;
+    transition: all 0.3s;
+}
+
+.list-item p {
+    margin: 2px;
+}
+
+.list-item:hover {
+    background-color: #fff7fb !important;
+}
+
+.close-button {
+    color: #DA4453;
+    text-decoration: none;
+    font: 14px arial, sans-serif;
+}
+
+a.close-button {
+    margin-right: 5px;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.close-button:after {
+    content: '✖'; /* UTF-8 symbol */
+}
+
+a.add-button {
+    margin-right: 5px;
+    margin-top: auto;
+    margin-bottom: auto;
+    padding: 0 5px 0 0 !important;
+}
+.add-button:after {
+    content: '➕'; /* UTF-8 symbol */
+}
+
+.source-show-anchor {
+    display: flex !important;
+}
+
+.watching {
+    background: #fbdaeb !important;
+}
+
+.latest-releases .watching a:hover.source-show-anchor.source-show-anchor  {
+    background: #fba1cf !important;
+}
+
+.latest-releases .watching a.source-show-anchor.source-show-anchor a:hover.add-button {
+    background: #fba1cf !important
+}
+
+.watching-add-button {
+    transform:rotate(45deg);
+    padding: 0;
 }

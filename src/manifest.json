@@ -1,6 +1,6 @@
 {
     "name": "Horrible Subs +",
-    "version": "2.0",
+    "version": "2.1",
     "description": "Simple extension to make Horrible subs more user friendly",
     "manifest_version": 2,
     "permissions": ["activeTab", "storage", "declarativeContent"],

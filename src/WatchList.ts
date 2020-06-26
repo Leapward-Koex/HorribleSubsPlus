@@ -18,7 +18,7 @@ class WatchList{
         );
     }
 
-    static reorderElements = (parentElement) => {
+    static reorderElements = (parentElement: HTMLLIElement) => {
         // For some reason, the date is first then floated right? This reorders them correctly
         var ordering = [1, 2, 3, 0];
         var wrapper = parentElement.children[0];
@@ -36,7 +36,6 @@ class WatchList{
 
     createListElement = () => {
         var listContainer = document.createElement('div');
-
         var listTitle = document.createElement("h2");
         listTitle.textContent = "Currently Watching";
         listContainer.appendChild(listTitle);
@@ -168,7 +167,7 @@ class WatchList{
     }
 
     populateAddToListButtons = (watchList) => {
-        var listItems = document.querySelectorAll("div.latest-releases li:not(.watch-list-item)");
+        var listItems = document.querySelectorAll<HTMLLIElement>("div.latest-releases li:not(.watch-list-item)");
         listItems.forEach((element) => {
             element = WatchList.reorderElements(element);
             element.classList.add('watch-list-item');

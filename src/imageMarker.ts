@@ -1,148 +1,180 @@
 
-var imageCache = [];
+interface ImageCacheItem {
+    key: string; // Typically showname
+    url: string;
+}
 
-var readMoreEvents = [];
-
-var head = document.querySelector("head");
-
-class imagePreview {
+class ImagePreviewService {
+    private imageCache: ImageCacheItem[] = []
     constructor() {
-        initialize();
     }
 
-    initialize() {
-        
-    }
-
-    refreshImagePreviews = () => {
-
-        ChromeStorage.getCache('imageCache').then((results) => {
-            var listItems = document.querySelectorAll("div.latest-releases li");
-            imageCache = results.imageCache ? results.imageCache.json : [];
-            imageKeyCache = imageCache.map((item) => item.key); // Array of chached element keys, i.e. the show name
-            var unCachedItems = Array.from(listItems).filter((e) => {
-                return imageKeyCache.indexOf(getKeyFromElement(e)) == -1;
-            });
-            var cachedElements = Array.from(listItems).filter((element) => {
-                return imageKeyCache.indexOf(getKeyFromElement(element)) != -1;
-            });
-            var index = 0;
-            var percent = 0;
-            var perItemPercent = 1 / unCachedItems.length;
-            var failedImages = [];
-            if(unCachedItems.length != 0){
-                var loadBar = new LoadBar();
-            }
-            var DOMGrabInterval = setInterval(() => {
-                var element = unCachedItems[index];
-                if(element){
-                    getSourceAsDOM(element).then((targetDom) => {
-                            // Successful dom retrieval with series image
-                            targetImageURL = targetDom.querySelector("div.series-image img").src;
-                            if (element.querySelectorAll(".hover-preview").length == 0){
-                                element.appendChild(imgCreate(targetImageURL));
-                                addMouseEvents([element]);
-                                imageCache = imageCache.concat([{"key": getKeyFromElement(element), "url": targetImageURL}]);
-                                percent = percent += perItemPercent;
-                                loadBar.setText(getKeyFromElement(element) + " DONE!");
-                                loadBar.animate(percent);
-                                if (index === unCachedItems.length){
-                                    // All items have been attempted, store the results and restart until all items are cached
-                                    ChromeStorage.setCache("imageCache", imageCache).then(() => {
-                                        setTimeout(() => {
-                                            loadBar.destroy();
-    
-                                            if(failedImages.length != 0){
-                                                // If failed to create hover preview for all images, try again with the failed images
-                                                refreshImagePreviews();
-                                            }
-                                        }, 3000);
-                                    });
-                                }
-                            }
-                        }, 
-                        (url) => {
-                            // Failed dom retrieval with series image
-                            console.log("Failed to retrieve", url);
-                            failedImages.concat([url]);
-                        }, element, index, unCachedItems, DOMGrabInterval, loadBar);
-                }
-                if (++index === unCachedItems.length){
-                    clearInterval(DOMGrabInterval);
-                }
-            }, 1000);
-    
-            cachedElements.forEach((element) => {
-                var imageCacheObject = imageCache.filter((item) => item.key == getKeyFromElement(element))[0];
-                if (element.querySelectorAll(".hover-preview").length == 0){
-                    element.appendChild(imgCreate(imageCacheObject.url));
-                }
-            });
-            
-            addMouseEvents(cachedElements);
+    private getUnCachedElements(listItems: HTMLLIElement[], imageKeysCache: string[]) {
+        return listItems.filter((e) => {
+            return imageKeysCache.indexOf(getKeyFromElement(e)) === -1;
         });
     }
 
-    getShowMoreButton() {
-        return document.querySelector(".more-button") || document.querySelector(".latest-more-button");
+    private getCachedElements(listItems: HTMLLIElement[], imageKeysCache: string[]) {
+        return listItems.filter((e) => {
+            return imageKeysCache.indexOf(getKeyFromElement(e)) !== -1;
+        });
     }
-}
 
-var imagePreview = new imagePreview();
-window.setTimeout(() => {
-    // Main
-    var moreButton = 
-    refreshImagePreviews();  // Bind image hover preview to list elements
+    public async refreshImagePreviews() {
+        const imageCache = await ChromeStorage.getCache('imageCache');
+        const listItems = await DOMHelper.getShowListItems();
+        this.imageCache = imageCache.imageCache ? <ImageCacheItem[]>imageCache.imageCache.json : new Array<ImageCacheItem>();
+        const imageKeysCache = this.imageCache.map((item) => item.key); // Array of chached element keys, i.e. the show name
 
-    createWatchlist().then(x=>{
-        readMoreEvents = readMoreEvents.concat([x.rePaint]);
-        bindReadMore(moreButton, readMoreEvents);
-    });
-    
-    bindReadMore(moreButton, readMoreEvents);
+        const unCachedItems = this.getUnCachedElements(listItems, imageKeysCache);
+        const cachedElements = this.getCachedElements(listItems, imageKeysCache);
 
-}, 1000);
+        if (unCachedItems.length !== 0) {
+            this.getUncachedItems(unCachedItems);
+        }
 
-var runHandlers = () => {
-    readMoreEvents.forEach(x=>{
-        x();
-    })
-}
+        this.addImagePreviewToElements(cachedElements);
+        this.addMouseEvents(cachedElements);
+    }
 
-var getSourceAsDOM = function (element){
-    return new Promise((resolve, reject) => {
-            xmlhttp = new XMLHttpRequest();
-            xmlhttp.onreadystatechange = () => {
-                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                    parser = new DOMParser();
-                    if(parser.parseFromString(xmlhttp.responseText,"text/html").querySelector("div.series-image img")){
-                        resolve(parser.parseFromString(xmlhttp.responseText,"text/html"))
+    getUncachedItems(unCachedItems: HTMLLIElement[]) {
+        const loadBar = new LoadBar();
+        let index = 0;
+        let percent = 0;
+        const perItemPercent = 1 / unCachedItems.length;
+        const failedImages = [];
+
+        var DOMGrabInterval = setInterval(async () => {
+            var element = unCachedItems[index];
+            if (element) {
+                this.getSourceAsDOM(element).then(async (targetDom) => {
+                    // Successful dom retrieval with series image
+                    const targetImageURL = (<HTMLImageElement>targetDom.querySelector("div.series-image img")).src;
+                    if (element.querySelectorAll(".hover-preview").length === 0) {
+                        element.appendChild(this.createHoverPreviewFromSrc(targetImageURL));
+                        this.addMouseEvents([element]);
+                        this.imageCache = this.imageCache.concat([{ "key": getKeyFromElement(element), "url": targetImageURL }]);
+                        percent = percent += perItemPercent;
+                        loadBar.setText(getKeyFromElement(element) + " DONE!");
+                        loadBar.animate(percent);
+                        if (index === unCachedItems.length) {
+                            // All items have been attempted, store the results and restart until all items are cached
+                            await ChromeStorage.setCache("imageCache", this.imageCache)
+                            setTimeout(() => {
+                                loadBar.destroy();
+                                if (failedImages.length !== 0) {
+                                    // If failed to create hover preview for all images, try again with the failed images
+                                    this.refreshImagePreviews();
+                                }
+                            }, 3000);
+                        }
                     }
-                    else{
+                }, (url) => {
+                    // Failed dom retrieval with series image
+                    console.log("Failed to retrieve", url);
+                    failedImages.concat([url])
+                });
+            }
+            if (++index === unCachedItems.length) {
+                clearInterval(DOMGrabInterval);
+            }
+        }, 1000);
+    }
+
+    private addImagePreviewToElements(cachedElements: HTMLLIElement[]) {
+        cachedElements.forEach((element) => {
+            var imageCacheItem = this.imageCache.filter((item) => item.key === getKeyFromElement(element))[0];
+            if (element.querySelectorAll(".hover-preview").length === 0) {
+                element.appendChild(this.createHoverPreviewFromSrc(imageCacheItem.url));
+            }
+        });
+    }
+
+    private addMouseEvents(items: HTMLLIElement[]) {
+        items.forEach((element) => {
+            element.addEventListener('mouseenter', (e) => {
+                mouseOver(e);
+            }, false);
+            element.addEventListener('mouseleave', (e) => {
+                mouseLeave(e);
+            }, false);
+        });
+    }
+
+    private getSourceAsDOM(element: HTMLLIElement) {
+        return new Promise<Document>((resolve, reject) => {
+            const xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = () => {
+                if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+                    const parser = new DOMParser();
+                    if (parser.parseFromString(xmlhttp.responseText, "text/html").querySelector("div.series-image img")) {
+                        resolve(parser.parseFromString(xmlhttp.responseText, "text/html"))
+                    }
+                    else {
                         reject(lastURL);
                     }
                 }
             }
-            var lastURL = element.firstChild.href;
-            xmlhttp.open("GET", element.firstChild.href, true);
-            xmlhttp.send();    
-        }
-    );
+            const lastURL = (<HTMLAnchorElement>element.firstChild).href;
+            xmlhttp.open("GET", (<HTMLAnchorElement>element.firstChild).href, true);
+            xmlhttp.send();
+        });
+    }
+
+    private createHoverPreviewFromSrc(src) {
+        var containerDiv = document.createElement('div');
+        var img = document.createElement('img');
+        img.src = src;
+        img.style.display = "none";
+        img.classList.add("hover-preview");
+        containerDiv.appendChild(img)
+        containerDiv.classList.add("hover-preview-div");
+        return containerDiv;
+    }
 }
 
-var injectScripts = (head) => {
-    var script = document.createElement("script");
-    script.setAttribute("src", "scripts/loading-bar.js");
-    script.setAttribute("type", "text/javascript");
-    head.appendChild(script);
+class DOMHelper {
+    public static getShowMoreButton() {
+        return new Promise<HTMLAnchorElement>((resolve, reject) => {
+            const interval = setInterval(() => {
+                const readMoreElement = document.querySelector<HTMLAnchorElement>(".more-button") || document.querySelector<HTMLAnchorElement>(".latest-more-button");
+                if (readMoreElement !== null) {
+                    clearInterval(interval)
+                    resolve(readMoreElement);
+                }
+            }, 10)
+        })
+    }
+
+    public static getShowListItems(previousCount = 0) {
+        return new Promise<HTMLLIElement[]>((resolve, reject) => {
+            const interval = setInterval(() => {
+                const listItems = document.querySelectorAll<HTMLLIElement>("div.latest-releases li")
+                if (listItems.length > previousCount) {
+                    clearInterval(interval)
+                    resolve(Array.from(listItems));
+                }
+            }, 10)
+        });
+    }
 }
 
-var injectStyles = (head) => {
-    var style = document.createElement("link");
-    style.setAttribute("href", "styles/loading-bar.css");
-    style.setAttribute("type", "text/css");
-    style.setAttribute("rel", "stylesheet");
-    head.appendChild(style);
+
+window.setTimeout(() => {
+    main();
+}, 1000);
+
+
+const main = async () => {
+    // Main
+    const imagePreviewService = new ImagePreviewService();
+    imagePreviewService.refreshImagePreviews();  // Bind image hover preview to list elements
+
+    const watchList = await createWatchlist()
+    DOMHelper.getShowMoreButton().then(showMoreButton => {
+        bindReadMore(showMoreButton, imagePreviewService, watchList);
+    })
 }
 
 var mouseOver = (e) => {
@@ -150,59 +182,33 @@ var mouseOver = (e) => {
     hoverPreview.style.display = "block";
 }
 
-var mouseLeave = (e) => {
-    e.srcElement.querySelectorAll(".hover-preview").forEach((element) => {
-            element.style.display = "none";
-        }
-    );
-    document.querySelectorAll(".hover-preview").forEach((element) => {
-            element.style.display = "none";
-        }
-    );
+var mouseLeave = (e: MouseEvent) => {
+    (<Element>e.target).querySelectorAll<HTMLImageElement>(".hover-preview").forEach((element) => {
+        element.style.display = "none";
+    });
+    document.querySelectorAll<HTMLImageElement>(".hover-preview").forEach((element) => {
+        element.style.display = "none";
+    });
 }
 
-var bindReadMore = (readMoreElement, readMoreEvents) => {
-    if (readMoreElement){
-        readMoreElement.addEventListener('mousedown', () => {
-            window.setTimeout(() => {
-                var readMoreElement = document.querySelector(".more-button") || document.querySelector(".latest-more-button");
-                bindReadMore(readMoreElement);
-                refreshImagePreviews();
-                runHandlers();
+const bindReadMore = (readMoreElement: HTMLAnchorElement, imagePreviewService: ImagePreviewService, watchList: WatchList) => {
+    if (readMoreElement) {
+        readMoreElement.addEventListener('mouseup', () => {
+            window.setTimeout(async () => {
+                const newReadMoreElement = await DOMHelper.getShowMoreButton();
+                bindReadMore(newReadMoreElement, imagePreviewService, watchList);
+                imagePreviewService.refreshImagePreviews();
+                watchList.rePaint();
             }, 1000);
         });
     }
 }
 
-var addMouseEvents = (items) => {
-    items.forEach(function(element){
-        element.addEventListener('mouseenter', (e) => {
-            mouseOver(e);
-        }, false);
-        element.addEventListener('mouseleave', (e) => {
-            mouseLeave(e);
-        }, false);
-    });
-}
-
-var createWatchlist = () => {
+const createWatchlist = () => {
     return WatchList.populateList().then((watchListCache) => {
         return new WatchList(watchListCache);
         // Bind to loadmore here
     })
-}
-
-var imgCreate = (src, alt, title) => {
-    var containerDiv = document.createElement('div');
-    var img = document.createElement('img');
-    img.src = src;
-    img.style.display = "none";
-    img.classList.add(["hover-preview"]);
-    if ( alt != null ) img.alt = alt;
-    if ( title != null ) img.title = title;
-    containerDiv.appendChild(img)
-    containerDiv.classList.add(["hover-preview-div"]);
-    return containerDiv;
 }
 
 var getKeyFromElement = (element) => {

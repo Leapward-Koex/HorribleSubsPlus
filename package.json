@@ -4,6 +4,7 @@
   "description": "Simple extension to make Horrible subs more user friendly",
   "main": "main.js",
   "dependencies": {
+    "@types/chrome": "0.0.117",
     "typescript": "3.9.5"
   },
   "devDependencies": {},

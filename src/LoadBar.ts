@@ -1,14 +1,20 @@
-class LoadBar{
-    constructor(id){
-        this.loadBarContainer  = document.createElement('div');
+class LoadBar {
+    loadBarContainer: HTMLDivElement;
+    loadBarElement: HTMLDivElement;
+    loadBar: any;
+    id: any;
+    constructor(id?){
+        this.id = id;
+        this.loadBarContainer = document.createElement('div');
         this.loadBarElement = document.createElement('div');
-        this.loadBarElement.classList = ['ldbar'];
+        this.loadBarElement.classList.add('ldbar');
         this.loadBarContainer.classList.add('loadBarContainer', 'well');
-        this.loadBarElement.id = this.id = "loadBarId" + (id ? id : uuidv4()); // Append id if supplied, otherwise use GUID
+        this.loadBarElement.id = `loadBarId${(id ? id : uuidv4())}`; // Append id if supplied, otherwise use GUID
         this.loadBarContainer.appendChild(this.loadBarElement);
         
         document.querySelector("body").appendChild(this.loadBarContainer);
 
+        // @ts-ignore
         this.loadBar = new ProgressBar.Line("#" + this.id, {
             strokeWidth: 2,
             easing: 'easeInOut',

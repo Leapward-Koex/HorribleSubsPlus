@@ -2,3 +2,4 @@ src/scripts/*
 *.js
 *.js.map
 src/imageMarker.js
+node_modules/

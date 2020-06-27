@@ -1,24 +1,30 @@
-class WatchList{
-    constructor(list){
-        this.currentlyWatchingItemsArray = list;
-        this.createListElement();
-        this.populateAddToListButtons(this.currentlyWatchingItemsArray);
-        this.currentlyWatchingItemsArray.forEach(item => {
-            this.addShow(item.title, item.key);
+interface WatchingCacheItem {
+    key: string; // Typically showname
+    title: string;
+}
+
+class WatchList {
+    private currentlyWatchingItemsArray: WatchingCacheItem[];
+    listBox: HTMLDivElement;
+
+    constructor(){
+    }
+
+    public intialize() {
+        return new Promise(async (resolve, reject) => {
+            const watchlistData = await ChromeStorage.getCache('watchListCache')
+            const watchlist = watchlistData.watchListCache ? watchlistData.watchListCache.json : [];
+            this.currentlyWatchingItemsArray = watchlist;
+            this.createListElement();
+            this.populateAddToListButtons();
+            this.currentlyWatchingItemsArray.forEach(item => {
+                this.addShow(item.title, item.key);
+            });
+            resolve();
         });
     }
 
-    static populateList = () => {
-        return new Promise((resolve, reject) => {
-                ChromeStorage.getCache('watchListCache').then((results) => {
-                    var watchingList = results.watchListCache ? results.watchListCache.json : [];
-                    resolve(watchingList);
-                });
-            }
-        );
-    }
-
-    static reorderElements = (parentElement: HTMLLIElement) => {
+    private reorderElements(parentElement: HTMLLIElement) {
         // For some reason, the date is first then floated right? This reorders them correctly
         var ordering = [1, 2, 3, 0];
         var wrapper = parentElement.children[0];
@@ -35,8 +41,9 @@ class WatchList{
     }
 
     createListElement = () => {
-        var listContainer = document.createElement('div');
-        var listTitle = document.createElement("h2");
+        // Creates the watching list in the top right of the page
+        const listContainer = document.createElement('div');
+        const listTitle = document.createElement("h2");
         listTitle.textContent = "Currently Watching";
         listContainer.appendChild(listTitle);
 
@@ -45,35 +52,31 @@ class WatchList{
         listContainer.appendChild(this.listBox);
 
         listContainer.classList.add("watchListContainer", "well", "homepage-well");
-        var rightColumn = document.querySelector("#secondary");
+        const rightColumn = document.querySelector("#secondary");
         rightColumn.insertBefore(listContainer, rightColumn.children[0]);
     }
 
-    addShowFromSourceList = (event) => {
+    addShowFromSourceList = async (event: Event) => {
         // Add from source list + button
-
-        var sourceAnchorElement = event.srcElement.parentElement;
-        var sourceLink = this.getShowKeyFromURL(sourceAnchorElement.href);
+        event.preventDefault();
+        const sourceAnchorElement = <HTMLAnchorElement>(<HTMLAnchorElement>event.target).parentElement;
+        const sourceLink = this.getShowKeyFromURL(sourceAnchorElement.href);
         var sourceTitle = sourceAnchorElement.childNodes[1].textContent.slice(0, sourceAnchorElement.childNodes[1].textContent.length - 3);
 
         this.addShow(sourceTitle, sourceLink, sourceAnchorElement)
 
         // Store in cache here
         this.currentlyWatchingItemsArray = this.currentlyWatchingItemsArray.concat([{"key": sourceLink, "title": sourceTitle}]);
-        ChromeStorage.setCache("watchListCache", this.currentlyWatchingItemsArray).then(()=>{
-            console.log("Updated watching list cache with item:", {"key": sourceLink, "title": sourceTitle})
-        });
-
-        event.preventDefault();
+        await ChromeStorage.setCache("watchListCache", this.currentlyWatchingItemsArray);
+        console.log("Updated watching list cache with item:", {"key": sourceLink, "title": sourceTitle})
     }
 
-    addShow = (showName, href, sourceAnchorElement) => {
-        // When you add from cache?
+    private addShow(showName: string, href: string, sourceAnchorElement?: HTMLAnchorElement) {
         var itemCountInList = [...this.listBox.children].filter(item => {
             return item.querySelector('a.show-label').innerHTML == showName;
         }).length;
 
-        if(itemCountInList == 0){
+        if (itemCountInList === 0){
             // Dont show duplicate entries in the watching list (caused by readmore rePaint)
             var listItem = document.createElement('div');
             listItem.classList.add("list-item")
@@ -95,7 +98,6 @@ class WatchList{
             this.listBox.appendChild(listItem);
         }
         
-        //colour element here
         if(this.getSourceListItemsFromKey(this.getShowKeyFromURL(href))[0]){
             sourceAnchorElement = sourceAnchorElement ? sourceAnchorElement : this.getSourceListItemsFromKey(this.getShowKeyFromURL(href))[0].querySelector('.source-show-anchor');
             sourceAnchorElement.parentElement.classList.add("watching");
@@ -105,19 +107,18 @@ class WatchList{
         }
     }
 
-    removeShow = (event) => {
+    removeShow (event: Event) {
         // Pressing the x button on the currently watching list
-        var listItem = event.srcElement.parentElement;
-        var showLink = listItem.querySelector(".show-label").href;
-        var sourceListAnchorItems = document.querySelectorAll("div.latest-releases li .source-show-anchor");
+        var listItem = (<HTMLAnchorElement>event.target).parentElement;
+        var showLink = listItem.querySelector<HTMLAnchorElement>(".show-label").href;
+        var sourceListAnchorItems = document.querySelectorAll<HTMLAnchorElement>("div.latest-releases li .source-show-anchor");
         var removedShows = [...sourceListAnchorItems].filter((sourceListItem) => {
-            return this.getShowKeyFromURL(sourceListItem.href) == this.getShowKeyFromURL(showLink);
+            return this.getShowKeyFromURL(sourceListItem.href) === this.getShowKeyFromURL(showLink);
         });
 
         removedShows.forEach((show) => {
             var listItem = show.parentElement;
             this.removeStylingFromListItem(listItem);
-
         })
 
         //Remove from cache         
@@ -144,7 +145,7 @@ class WatchList{
         })
 
         var currentlyWatchingRemovedItems = [...document.querySelector("#watchListBox").children].filter((listItem) => {
-            return this.getShowKeyFromURL(listItem.querySelector('.show-label').href) == this.getShowKeyFromURL(showLink);
+            return this.getShowKeyFromURL(listItem.querySelector<HTMLAnchorElement>('.show-label').href) === this.getShowKeyFromURL(showLink);
         })
         currentlyWatchingRemovedItems.forEach(x=> {x.remove()});
         
@@ -159,26 +160,25 @@ class WatchList{
 
     }
 
-    rePaint = () => {
-        this.populateAddToListButtons(this.currentlyWatchingItemsArray);
+    public rePaint = () => {
+        this.populateAddToListButtons();
         this.currentlyWatchingItemsArray.forEach(item => {
             this.addShow(item.title, item.key);
         });
     }
 
-    populateAddToListButtons = (watchList) => {
-        var listItems = document.querySelectorAll<HTMLLIElement>("div.latest-releases li:not(.watch-list-item)");
+    private populateAddToListButtons() {
+        const listItems = document.querySelectorAll<HTMLLIElement>("div.latest-releases li:not(.watch-list-item)");
         listItems.forEach((element) => {
-            element = WatchList.reorderElements(element);
+            element = this.reorderElements(element);
             element.classList.add('watch-list-item');
     
-            var addButton = document.createElement('a');
+            const addButton = <HTMLAnchorElement>document.createElement('a');
             addButton.href = "#";
             addButton.classList.add("add-button");
             addButton.onclick = this.addShowFromSourceList;
     
             element.children[0].classList.add("source-show-anchor");
-    
             element.children[0].insertBefore(addButton, element.children[0].childNodes[0]);
         });
     }
@@ -199,7 +199,7 @@ class WatchList{
         listItemAddButton.onclick = this.addShowFromSourceList;
     }
 
-    getShowKeyFromURL = (url) => {
+    private getShowKeyFromURL(url: string) {
         if (url.indexOf('.info/') != -1){
             return url.split(".info")[1].split('#')[0];
         }
@@ -209,9 +209,9 @@ class WatchList{
     }
 
     getSourceListItemsFromKey = (key) => {
-        var sourceListAnchorItems = document.querySelectorAll("div.latest-releases li");
+        var sourceListAnchorItems = document.querySelectorAll<HTMLLIElement>("div.latest-releases li");
         return [...sourceListAnchorItems].filter((sourceListItem) => {
-            return this.getShowKeyFromURL(sourceListItem.querySelector('.source-show-anchor').href) == this.getShowKeyFromURL(key);
+            return this.getShowKeyFromURL(sourceListItem.querySelector<HTMLAnchorElement>('.source-show-anchor').href) === this.getShowKeyFromURL(key);
         });
     }
 }

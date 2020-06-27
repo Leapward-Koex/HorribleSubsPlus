@@ -25,12 +25,12 @@
                 "https://horriblesubs.info/"
             ],
             "js": [
-                "imageMarker.js",
                 "LoadBar.js",
                 "StorageBroker.js",
                 "WatchList.js",
                 "scripts/progressbar.min.js",
-                "scripts/jquery-3.4.1.slim.min.js"
+                "scripts/jquery-3.4.1.slim.min.js",
+                "imageMarker.js"
             ],
             "css":[
                 "main.css"

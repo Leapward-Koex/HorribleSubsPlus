@@ -1,8 +1,8 @@
 class ChromeStorage {
-    static setCache = (cacheName, cacheData) => {
+    static setCache = (cacheName, json) => {
         return new Promise(
             (resolve, reject) => {
-                chrome.storage.local.set({[cacheName]:{cacheData}}, () => {
+                chrome.storage.local.set({[cacheName]:{json}}, () => {
                     resolve()
                 });
             }

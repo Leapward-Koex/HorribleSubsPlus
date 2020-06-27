@@ -160,23 +160,6 @@ class DOMHelper {
     }
 }
 
-
-window.setTimeout(() => {
-    main();
-}, 1000);
-
-
-const main = async () => {
-    // Main
-    const imagePreviewService = new ImagePreviewService();
-    imagePreviewService.refreshImagePreviews();  // Bind image hover preview to list elements
-
-    const watchList = await createWatchlist()
-    DOMHelper.getShowMoreButton().then(showMoreButton => {
-        bindReadMore(showMoreButton, imagePreviewService, watchList);
-    })
-}
-
 var mouseOver = (e) => {
     var hoverPreview = e.srcElement.querySelector(".hover-preview");
     hoverPreview.style.display = "block";
@@ -204,14 +187,26 @@ const bindReadMore = (readMoreElement: HTMLAnchorElement, imagePreviewService: I
     }
 }
 
-const createWatchlist = () => {
-    return WatchList.populateList().then((watchListCache) => {
-        return new WatchList(watchListCache);
-        // Bind to loadmore here
-    })
+const createWatchlist = async () => {
+    const watchListService = new WatchList();
+    await watchListService.intialize();
+    return watchListService;
 }
 
 var getKeyFromElement = (element) => {
     var link = element.querySelector("a").href;
     return link.split("#")[0];
 }
+
+const main = async () => {
+    // Main
+    const imagePreviewService = new ImagePreviewService();
+    imagePreviewService.refreshImagePreviews();  // Bind image hover preview to list elements
+
+    const watchList = await createWatchlist()
+    DOMHelper.getShowMoreButton().then(showMoreButton => {
+        bindReadMore(showMoreButton, imagePreviewService, watchList);
+    })
+}
+
+main();

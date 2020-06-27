@@ -3,19 +3,19 @@ class LoadBar {
     loadBarElement: HTMLDivElement;
     loadBar: any;
     id: any;
-    constructor(id?){
+    constructor(id: string = uuidv4()){
         this.id = id;
         this.loadBarContainer = document.createElement('div');
         this.loadBarElement = document.createElement('div');
         this.loadBarElement.classList.add('ldbar');
         this.loadBarContainer.classList.add('loadBarContainer', 'well');
-        this.loadBarElement.id = `loadBarId${(id ? id : uuidv4())}`; // Append id if supplied, otherwise use GUID
+        this.loadBarElement.id = `loadBarId${id}`;
         this.loadBarContainer.appendChild(this.loadBarElement);
         
         document.querySelector("body").appendChild(this.loadBarContainer);
 
         // @ts-ignore
-        this.loadBar = new ProgressBar.Line("#" + this.id, {
+        this.loadBar = new ProgressBar.Line("#" + this.loadBarElement.id, {
             strokeWidth: 2,
             easing: 'easeInOut',
             duration: 1400,
@@ -67,7 +67,8 @@ class LoadBar {
 }
 
 function uuidv4() {
-    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-    )
-  }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+}

@@ -126,7 +126,6 @@ class ImagePreviewService {
         var containerDiv = document.createElement('div');
         var img = document.createElement('img');
         img.src = src;
-        img.style.display = "none";
         img.classList.add("hover-preview");
         containerDiv.appendChild(img)
         containerDiv.classList.add("hover-preview-div");
@@ -135,6 +134,33 @@ class ImagePreviewService {
 }
 
 class DOMHelper {
+    static waitForNewListItems(currentlistElementCount: number) {
+        return new Promise<HTMLLIElement[]>((resolve, reject) => {
+            const interval = setInterval(() => {
+                const newListItemsCount = document.querySelectorAll<HTMLLIElement>("div.latest-releases li").length;
+                const showMoreText = document.querySelector<HTMLDivElement>(".latest-show-more").innerText;
+                if (newListItemsCount > currentlistElementCount || showMoreText === "Please use search instead") {
+                    clearInterval(interval)
+                    resolve();
+                }
+            });
+        });
+    }
+
+    static getWatchListItems() {
+        return new Promise<HTMLLIElement[]>((resolve, reject) => {
+            const interval = setInterval(() => {
+                const unwatchedListItems = document.querySelectorAll<HTMLLIElement>("div.latest-releases li:not(.watch-list-item)");
+                const listItems = document.querySelectorAll<HTMLLIElement>("div.latest-releases li");
+                if (unwatchedListItems.length > 0 || listItems.length > 0) {
+                    clearInterval(interval)
+                    resolve(Array.from(unwatchedListItems));
+                }
+            });
+        });
+        
+    }
+
     public static getShowMoreButton() {
         return new Promise<HTMLAnchorElement>((resolve, reject) => {
             const interval = setInterval(() => {
@@ -162,27 +188,30 @@ class DOMHelper {
 
 var mouseOver = (e) => {
     var hoverPreview = e.srcElement.querySelector(".hover-preview");
-    hoverPreview.style.display = "block";
+    hoverPreview.classList.add("fade-in");
 }
 
 var mouseLeave = (e: MouseEvent) => {
     (<Element>e.target).querySelectorAll<HTMLImageElement>(".hover-preview").forEach((element) => {
-        element.style.display = "none";
+        element.classList.remove("fade-in");
     });
     document.querySelectorAll<HTMLImageElement>(".hover-preview").forEach((element) => {
-        element.style.display = "none";
+        element.classList.remove("fade-in");
     });
 }
 
 const bindReadMore = (readMoreElement: HTMLAnchorElement, imagePreviewService: ImagePreviewService, watchList: WatchList) => {
     if (readMoreElement) {
-        readMoreElement.addEventListener('mouseup', () => {
-            window.setTimeout(async () => {
-                const newReadMoreElement = await DOMHelper.getShowMoreButton();
-                bindReadMore(newReadMoreElement, imagePreviewService, watchList);
-                imagePreviewService.refreshImagePreviews();
-                watchList.rePaint();
-            }, 1000);
+        let listElementCount = 0;
+        readMoreElement.addEventListener('mousedown', async () => {
+            listElementCount = (await DOMHelper.getShowListItems()).length;
+        });
+        readMoreElement.addEventListener('mouseup', async () => {
+            await DOMHelper.waitForNewListItems(listElementCount);
+            const newReadMoreElement = await DOMHelper.getShowMoreButton();
+            bindReadMore(newReadMoreElement, imagePreviewService, watchList);
+            imagePreviewService.refreshImagePreviews();
+            watchList.rePaint();
         });
     }
 }

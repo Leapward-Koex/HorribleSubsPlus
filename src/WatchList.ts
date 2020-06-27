@@ -85,7 +85,9 @@ class WatchList {
             var removeButton = document.createElement('a');
             removeButton.href = "#";
             removeButton.classList.add("close-button");
-            removeButton.onclick = this.removeShow;
+            removeButton.onclick = (event: Event) => {
+                this.removeShow(event);
+            }
 
             var showLabel = document.createElement('a');
             showLabel.classList.add("show-label");
@@ -160,15 +162,15 @@ class WatchList {
 
     }
 
-    public rePaint = () => {
-        this.populateAddToListButtons();
+    public async rePaint() {
+        await this.populateAddToListButtons();
         this.currentlyWatchingItemsArray.forEach(item => {
             this.addShow(item.title, item.key);
         });
     }
 
-    private populateAddToListButtons() {
-        const listItems = document.querySelectorAll<HTMLLIElement>("div.latest-releases li:not(.watch-list-item)");
+    private async populateAddToListButtons() {
+        const listItems = await DOMHelper.getWatchListItems();
         listItems.forEach((element) => {
             element = this.reorderElements(element);
             element.classList.add('watch-list-item');

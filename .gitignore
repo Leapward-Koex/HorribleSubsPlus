@@ -3,3 +3,5 @@ src/scripts/*
 *.js.map
 src/imageMarker.js
 node_modules/
+output
+HSPlusExtension.zip

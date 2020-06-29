@@ -1,6 +1,6 @@
 tsc
 
-$exclude = @('*.png', '*.psd','*.config', '*.ts', '*.js.map')
+$exclude = @('*.psd','*.config', '*.ts', '*.js.map')
 $srcFolder = "src/**"
 $destFolder = "output/"
 

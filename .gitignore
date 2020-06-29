@@ -5,3 +5,4 @@ src/imageMarker.js
 node_modules/
 output
 HSPlusExtension.zip
+output.crx

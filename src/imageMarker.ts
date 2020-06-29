@@ -93,12 +93,11 @@ class ImagePreviewService {
 
     private addMouseEvents(items: HTMLLIElement[]) {
         items.forEach((element) => {
-            element.addEventListener('mouseenter', (e) => {
-                mouseOver(e);
-            }, false);
-            element.addEventListener('mouseleave', (e) => {
-                mouseLeave(e);
-            }, false);
+            element.removeEventListener('mouseenter', this.mouseEnter, false);
+            element.removeEventListener('mouseleave', this.mouseLeave, false)
+
+            element.addEventListener('mouseenter', this.mouseEnter, false);
+            element.addEventListener('mouseleave', this.mouseLeave, false);
         });
     }
 
@@ -130,6 +129,16 @@ class ImagePreviewService {
         containerDiv.appendChild(img)
         containerDiv.classList.add("hover-preview-div");
         return containerDiv;
+    }
+
+    private mouseEnter(e: MouseEvent) {
+        const hoverPreview = (<Element>e.srcElement).querySelector<HTMLImageElement>(".hover-preview");
+        hoverPreview.classList.add("fade-in");
+    }
+
+    private mouseLeave(e: MouseEvent) {
+        const hoverPreview = (<Element>e.srcElement).querySelector<HTMLImageElement>(".hover-preview");
+        hoverPreview.classList.remove("fade-in");
     }
 }
 
@@ -186,19 +195,6 @@ class DOMHelper {
     }
 }
 
-var mouseOver = (e) => {
-    var hoverPreview = e.srcElement.querySelector(".hover-preview");
-    hoverPreview.classList.add("fade-in");
-}
-
-var mouseLeave = (e: MouseEvent) => {
-    (<Element>e.target).querySelectorAll<HTMLImageElement>(".hover-preview").forEach((element) => {
-        element.classList.remove("fade-in");
-    });
-    document.querySelectorAll<HTMLImageElement>(".hover-preview").forEach((element) => {
-        element.classList.remove("fade-in");
-    });
-}
 
 const bindReadMore = (readMoreElement: HTMLAnchorElement, imagePreviewService: ImagePreviewService, watchList: WatchList) => {
     if (readMoreElement) {

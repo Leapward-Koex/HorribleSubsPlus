@@ -71,7 +71,7 @@ class WatchList {
         console.log("Updated watching list cache with item:", {"key": sourceLink, "title": sourceTitle})
     }
 
-    private addShow(showName: string, href: string, sourceAnchorElement?: HTMLAnchorElement) {
+    private async addShow(showName: string, href: string, sourceAnchorElement?: HTMLAnchorElement, currentListCount: number = 0) {
         var itemCountInList = [...this.listBox.children].filter(item => {
             return item.querySelector('a.show-label').innerHTML == showName;
         }).length;
@@ -99,13 +99,16 @@ class WatchList {
 
             this.listBox.appendChild(listItem);
         }
-        
-        if(this.getSourceListItemsFromKey(this.getShowKeyFromURL(href))[0]){
-            sourceAnchorElement = sourceAnchorElement ? sourceAnchorElement : this.getSourceListItemsFromKey(this.getShowKeyFromURL(href))[0].querySelector('.source-show-anchor');
-            sourceAnchorElement.parentElement.classList.add("watching");
-            sourceAnchorElement.classList.add("watching-anchor");
-            sourceAnchorElement.querySelector('a').classList.add("watching-add-button");
-            sourceAnchorElement.querySelector('a').onclick = this.removeShowFromSourceList;
+
+        const itemsInList = (await this.getSourceListItemsFromKey(this.getShowKeyFromURL(href)))
+        if (itemsInList.length >= 0) {
+            itemsInList.forEach((item) => {
+                const domItem = sourceAnchorElement ? sourceAnchorElement : item.querySelector('.source-show-anchor');
+                domItem.parentElement.classList.add("watching");
+                domItem.classList.add("watching-anchor");
+                domItem.querySelector('a').classList.add("watching-add-button");
+                domItem.querySelector('a').onclick = this.removeShowFromSourceList;
+            })
         }
     }
 
@@ -135,12 +138,11 @@ class WatchList {
         listItem.remove();
     }
 
-    removeShowFromSourceList = (event) => {
+    removeShowFromSourceList = async (event) => {
 
         var sourceAnchorElement = event.srcElement.parentElement;
         var showLink = sourceAnchorElement.href;
-
-        var removedShows = this.getSourceListItemsFromKey(showLink);
+        var removedShows = await this.getSourceListItemsFromKey(showLink);
 
         removedShows.forEach((show) => {
             this.removeStylingFromListItem(show);
@@ -210,9 +212,9 @@ class WatchList {
         }
     }
 
-    getSourceListItemsFromKey = (key) => {
-        var sourceListAnchorItems = document.querySelectorAll<HTMLLIElement>("div.latest-releases li");
-        return [...sourceListAnchorItems].filter((sourceListItem) => {
+    private async getSourceListItemsFromKey(key: string) {
+        const sourceListAnchorItems = await DOMHelper.getShowListItems();
+        return sourceListAnchorItems.filter((sourceListItem) => {
             return this.getShowKeyFromURL(sourceListItem.querySelector<HTMLAnchorElement>('.source-show-anchor').href) === this.getShowKeyFromURL(key);
         });
     }

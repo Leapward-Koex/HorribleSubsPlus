@@ -1,6 +1,6 @@
 {
     "name": "Horrible Subs +",
-    "version": "2.0",
+    "version": "2.2",
     "description": "Simple extension to make Horrible subs more user friendly",
     "manifest_version": 2,
     "permissions": ["activeTab", "storage", "declarativeContent"],
@@ -25,15 +25,15 @@
                 "https://horriblesubs.info/"
             ],
             "js": [
-                "imageMarker.js",
                 "LoadBar.js",
                 "StorageBroker.js",
                 "WatchList.js",
                 "scripts/progressbar.min.js",
-                "scripts/jquery-3.4.1.slim.min.js"
+                "scripts/jquery-3.4.1.slim.min.js",
+                "imageMarker.js"
             ],
             "css":[
-                "main.css"
+                "styles/main.css"
             ]
         }
     ]
